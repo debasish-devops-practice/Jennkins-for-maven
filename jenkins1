@@ -1,0 +1,28 @@
+node
+{
+ def mavenn = tool name: "maven3.6"
+
+ stage('Pushing the code from Git')
+  {
+   git credentialsId: '0843e517-ae54-4c37-bd5a-c8e98411d42b', url: 'https://github.com/debasish-devops-practice/maven-web-application.git'
+  }
+ stage('Building package') 
+  {
+   sh "${mavenn}/bin/mvn clean package"
+  } 
+ stage('Generating the SonarQube Report')
+  {
+   sh "${mavenn}/bin/mvn sonar:sonar"
+  }
+  stage('Uploading the artifact to Nexus Repository')
+  {
+   sh "${mavenn}/bin/mvn deploy"   
+  }
+  stage('Deploying the package to Application Server')
+  {
+      sshagent(['f5d6378e-3131-4e5b-831c-c5249671ecd7'])
+      {
+        sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.108.235.66:/opt/tomcat9/webapps"
+      }
+  }
+}
