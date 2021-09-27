@@ -1,0 +1,49 @@
+pipeline
+{
+ agent any
+ tools
+ {
+  maven 'maven3.6'   
+ }
+ stages
+ {
+  stage('Pulling the code from SCM')
+  {
+   steps
+   {
+    git credentialsId: '0843e517-ae54-4c37-bd5a-c8e98411d42b', url: 'https://github.com/debasish-devops-practice/maven-web-application.git'  
+   }   
+  }
+  stage('Build')
+  {
+   steps
+   {
+    sh "mvn clean package"
+   }
+  }
+  stage('Generating SonarQube Report')
+  {
+   steps
+   {
+    sh "mvn sonar:sonar"
+   }   
+  }
+  stage('Uploading the artifact to Nexus Repository')
+  {
+   steps
+   {
+    sh "mvn clean deploy"
+   }
+  }
+  stage('Deploying the package to the application server')
+  {
+   steps
+   {
+    sshagent(['f5d6378e-3131-4e5b-831c-c5249671ecd7'])
+    {
+    sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.7.70.176:/opt/tomcat9/webapps"
+    }
+   }
+  }  
+ }
+}
